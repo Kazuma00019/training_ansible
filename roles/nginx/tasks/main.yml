@@ -1,0 +1,46 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+  become: true
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: true
+
+- name: Copy Nginx configuration for API
+  template:
+    src: api.conf.j2
+    dest: /etc/nginx/conf.d/api.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload Nginx
+
+- name: Copy Nginx configuration for CMS
+  template:
+    src: cms.conf.j2
+    dest: /etc/nginx/conf.d/cms.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload Nginx
+
+- name: Ensure Nginx is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Remove default Nginx configuration
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify:
+    - Reload Nginx
+
+

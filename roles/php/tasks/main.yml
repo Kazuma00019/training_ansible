@@ -1,0 +1,84 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: true
+
+- name: Install PHP and required PHP modules
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - php-fpm
+    - php-mysql
+    - php-cli
+    - php-json
+    - php-mbstring
+    - php-curl
+    - php-xml
+    - php-opcache
+  become: true
+  vars:
+    php_version: '8.1'
+
+- name: Ensure PHP-FPM is started and enabled
+  service:
+    name: php{{ php_version }}-fpm
+    state: started
+    enabled: true
+  become: true
+
+- name: Configure PHP settings
+  lineinfile:
+    path: /etc/php/{{ php_version }}/fpm/php.ini
+    regexp: '^{{ item.key }}'
+    line: "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: 'zend.exception_ignore_args', value: 'off' }
+    - { key: 'expose_php', value: 'on' }
+    - { key: 'max_execution_time', value: '30' }
+    - { key: 'max_input_vars', value: '1000' }
+    - { key: 'upload_max_filesize', value: '64M' }
+    - { key: 'post_max_size', value: '128M' }
+    - { key: 'memory_limit', value: '256M' }
+    - { key: 'error_reporting', value: 'E_ALL' }
+    - { key: 'display_errors', value: 'on' }
+    - { key: 'display_startup_errors', value: 'on' }
+    - { key: 'log_errors', value: 'on' }
+    - { key: 'error_log', value: '/var/log/php/php-error.log' }
+    - { key: 'default_charset', value: 'UTF-8' }
+  become: true
+
+- name: Configure OPcache settings
+  lineinfile:
+    path: /etc/php/{{ php_version }}/fpm/conf.d/10-opcache.ini
+    regexp: '^{{ item.key }}'
+    line: "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: 'zend_extension', value: '/usr/local/lib/php/extensions/no-debug-zts-20170718/opcache.so' }
+    - { key: 'opcache.enable', value: '1' }
+    - { key: 'opcache.enable_cli', value: '1' }
+    - { key: 'opcache.memory_consumption', value: '128' }
+    - { key: 'opcache.max_accelerated_files', value: '10000' }
+    - { key: 'opcache.revalidate_freq', value: '60' }
+  become: true
+
+
+- name: Restart PHP-FPM to apply changes
+  service:
+    name: php{{ php_version }}-fpm
+    state: restarted
+  become: true
+
+- name: Install cron
+  apt:
+    name: cron
+    state: present
+  become: true
+
+- name: Ensure cron service is running and enabled
+  service:
+    name: cron
+    state: started
+    enabled: true
+  become: true

@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: true
+  vars:
+    php_version: '8.1'
+  roles:
+    - nginx
+    - php
+    - mysql

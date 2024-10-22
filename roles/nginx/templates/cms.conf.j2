@@ -1,0 +1,19 @@
+server {
+    listen       80;
+    server_name  cms.training-local.com;
+
+    root   /var/www/cms/public;
+    index index.php;
+
+    access_log /var/log/nginx/access_cms.log;
+    error_log /var/log/nginx/error_cms.log;
+
+    location / {
+        try_files $uri $uri/ /index.php$args;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+    }
+}
